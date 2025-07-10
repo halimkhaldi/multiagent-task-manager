@@ -20,10 +20,8 @@ class TaskManager {
       ...options,
     };
 
-    this.dataDir =
-      options.dataDir ||
-      process.env.TASK_MANAGER_DATA_DIR ||
-      (this.config.useCurrentDir ? "./" : "./tasks-data");
+    this.dataDir = options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./";
+    this.dataDir = this.dataDir + "tasks-data";
     this.trackerFile = path.join(this.dataDir, "task-tracker.json");
     this.agentsFile = path.join(this.dataDir, "agents.json");
     this.currentAgentId =
@@ -59,9 +57,7 @@ class TaskManager {
   smartInit(options = {}) {
     const useCurrentDir = options.useCurrentDir || this.config.useCurrentDir;
     const targetDir =
-      options.dataDir ||
-      process.env.TASK_MANAGER_DATA_DIR ||
-      (useCurrentDir ? "./" : "./tasks-data");
+      options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./tasks-data";
 
     console.log(`🔍 Initializing TaskManager in: ${targetDir}`);
 
@@ -136,7 +132,7 @@ class TaskManager {
     const requiredEnvVars = [
       "# TaskManager Configuration",
       `TASK_MANAGER_AGENT_ID=${this.currentAgentId || "your-agent-id"}`,
-      `TASK_MANAGER_DATA_DIR=${this.dataDir}`,
+      `TASK_MANAGER_DATA_DIR=/.`,
       `TASK_MANAGER_USE_CURRENT_DIR=${this.config.useCurrentDir}`,
     ];
 

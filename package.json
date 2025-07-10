@@ -13,7 +13,8 @@
     "init": "node task-manager.js init",
     "demo": "node test-demo.js",
     "examples": "node examples.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test.js",
+    "test:verbose": "TEST_VERBOSE=true node test.js",
     "clean": "rm -rf tasks-data demo-data example-data",
     "status": "node task-manager.js status",
     "agents": "node task-manager.js agents"
@@ -53,6 +54,7 @@
     "examples.js",
     "test-demo.js",
     "test-init.js",
+    "test.js",
     "simple-demo.js",
     "project-templates.js",
     "complete-workflow-showcase.js",

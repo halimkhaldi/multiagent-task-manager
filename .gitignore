@@ -133,3 +133,4 @@ phases/
 .env.test.local
 .env.production.local
 npx-test/
+test*/
