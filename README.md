@@ -118,6 +118,45 @@ node task-manager.js agents
 node task-manager.js status
 ```
 
+## 🔌 MCP Integration (Model Context Protocol)
+
+Connect this task manager to AI assistants like Claude Desktop using MCP.
+
+### Quick Setup with NPX
+```bash
+# Test access
+npx multiagent-task-manager-mcp --help
+
+# Add to Claude Desktop config:
+{
+  "mcpServers": {
+    "multiagent-task-manager": {
+      "command": "npx",
+      "args": ["multiagent-task-manager-mcp"],
+      "env": {
+        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
+        "TASK_MANAGER_AGENT_ID": "claude-assistant"
+      }
+    }
+  }
+}
+```
+
+### Available MCP Tools
+- `init_task_manager` - Initialize projects
+- `create_task` - Create and assign tasks
+- `list_tasks` - View and filter tasks
+- `add_agent` - Add team members
+- `get_recommendations` - Get AI suggestions
+- `get_project_status` - View progress
+- `agent_check_in` - Agent workflows
+- And 6 more tools...
+
+### Example Usage
+Ask Claude: *"Initialize a new web project with 3 developers and create 5 tasks for a login system"*
+
+📚 **Full MCP Documentation:** See `MCP-SETUP.md` and `QUICK-MCP-SETUP.md`
+
 ## 🤖 Agent Management
 
 ### Agent Types

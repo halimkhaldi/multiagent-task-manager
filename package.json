@@ -59,6 +59,7 @@
     "mcp-server.js",
     "mcp-config.json",
     "MCP-SETUP.md",
+    "QUICK-MCP-SETUP.md",
     ".env.example",
     "README.md",
     "LICENSE"
