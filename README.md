@@ -122,17 +122,17 @@ node task-manager.js status
 
 Connect this task manager to AI assistants like Claude Desktop using MCP.
 
-### Quick Setup with NPX
+### Quick Setup
 ```bash
-# Test access
-npx multiagent-task-manager-mcp --help
+# Test access (if installed globally)
+multiagent-task-manager-mcp --help
 
 # Add to Claude Desktop config:
 {
   "mcpServers": {
     "multiagent-task-manager": {
       "command": "npx",
-      "args": ["multiagent-task-manager-mcp"],
+      "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
         "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"

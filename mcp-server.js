@@ -7,14 +7,8 @@
  * allowing AI assistants to manage tasks, agents, and workflows.
  */
 
-const { Server } = require("@modelcontextprotocol/sdk/server/index.js");
-const {
-  StdioServerTransport,
-} = require("@modelcontextprotocol/sdk/server/stdio.js");
-const {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} = require("@modelcontextprotocol/sdk/types.js");
+// MCP SDK imports will be loaded dynamically
+let Server, StdioServerTransport, CallToolRequestSchema, ListToolsRequestSchema;
 const TaskManager = require("./task-manager.js");
 const {
   findProjectRoot,
@@ -26,10 +20,32 @@ const {
 
 class TaskManagerMCPServer {
   constructor() {
+    this.server = null;
+    this.taskManager = null;
+  }
+
+  async initialize() {
+    // Dynamically import MCP SDK modules
+    const { Server } = await import(
+      "@modelcontextprotocol/sdk/server/index.js"
+    );
+    const { StdioServerTransport } = await import(
+      "@modelcontextprotocol/sdk/server/stdio.js"
+    );
+    const { CallToolRequestSchema, ListToolsRequestSchema } = await import(
+      "@modelcontextprotocol/sdk/types.js"
+    );
+
+    // Store for later use
+    global.Server = Server;
+    global.StdioServerTransport = StdioServerTransport;
+    global.CallToolRequestSchema = CallToolRequestSchema;
+    global.ListToolsRequestSchema = ListToolsRequestSchema;
+
     this.server = new Server(
       {
         name: "multiagent-task-manager",
-        version: "1.0.0",
+        version: "1.2.11",
       },
       {
         capabilities: {
@@ -38,7 +54,6 @@ class TaskManagerMCPServer {
       },
     );
 
-    this.taskManager = null;
     this.setupToolHandlers();
   }
 
@@ -156,7 +171,7 @@ class TaskManagerMCPServer {
 
   setupToolHandlers() {
     // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+    this.server.setRequestHandler(global.ListToolsRequestSchema, async () => {
       return {
         tools: [
           {
@@ -586,74 +601,77 @@ class TaskManagerMCPServer {
     });
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+    this.server.setRequestHandler(
+      global.CallToolRequestSchema,
+      async (request) => {
+        const { name, arguments: args } = request.params;
 
-      try {
-        switch (name) {
-          case "init_task_manager":
-            return await this.handleInitTaskManager(args);
-          case "create_task":
-            return await this.handleCreateTask(args);
-          case "list_tasks":
-            return await this.handleListTasks(args);
-          case "update_task":
-            return await this.handleUpdateTask(args);
-          case "assign_agent":
-            return await this.handleAssignAgent(args);
-          case "add_agent":
-            return await this.handleAddAgent(args);
-          case "list_agents":
-            return await this.handleListAgents(args);
-          case "get_recommendations":
-            return await this.handleGetRecommendations(args);
-          case "get_project_status":
-            return await this.handleGetProjectStatus(args);
-          case "get_agent_workload":
-            return await this.handleGetAgentWorkload(args);
-          case "agent_check_in":
-            return await this.handleAgentCheckIn(args);
-          case "start_task":
-            return await this.handleStartTask(args);
-          case "complete_task":
-            return await this.handleCompleteTask(args);
-          case "export_project":
-            return await this.handleExportProject(args);
-          case "remove_agent":
-            return await this.handleRemoveAgent(args);
-          case "delete_task":
-            return await this.handleDeleteTask(args);
-          case "get_task":
-            return await this.handleGetTask(args);
-          case "unassign_agent":
-            return await this.handleUnassignAgent(args);
-          case "get_my_tasks":
-            return await this.handleGetMyTasks(args);
-          case "get_my_notifications":
-            return await this.handleGetMyNotifications(args);
-          case "clear_my_notifications":
-            return await this.handleClearMyNotifications(args);
-          case "transfer_task":
-            return await this.handleTransferTask(args);
-          case "set_current_agent":
-            return await this.handleSetCurrentAgent(args);
-          case "get_current_agent":
-            return await this.handleGetCurrentAgent(args);
-          default:
-            throw new Error(`Unknown tool: ${name}`);
+        try {
+          switch (name) {
+            case "init_task_manager":
+              return await this.handleInitTaskManager(args);
+            case "create_task":
+              return await this.handleCreateTask(args);
+            case "list_tasks":
+              return await this.handleListTasks(args);
+            case "update_task":
+              return await this.handleUpdateTask(args);
+            case "assign_agent":
+              return await this.handleAssignAgent(args);
+            case "add_agent":
+              return await this.handleAddAgent(args);
+            case "list_agents":
+              return await this.handleListAgents(args);
+            case "get_recommendations":
+              return await this.handleGetRecommendations(args);
+            case "get_project_status":
+              return await this.handleGetProjectStatus(args);
+            case "get_agent_workload":
+              return await this.handleGetAgentWorkload(args);
+            case "agent_check_in":
+              return await this.handleAgentCheckIn(args);
+            case "start_task":
+              return await this.handleStartTask(args);
+            case "complete_task":
+              return await this.handleCompleteTask(args);
+            case "export_project":
+              return await this.handleExportProject(args);
+            case "remove_agent":
+              return await this.handleRemoveAgent(args);
+            case "delete_task":
+              return await this.handleDeleteTask(args);
+            case "get_task":
+              return await this.handleGetTask(args);
+            case "unassign_agent":
+              return await this.handleUnassignAgent(args);
+            case "get_my_tasks":
+              return await this.handleGetMyTasks(args);
+            case "get_my_notifications":
+              return await this.handleGetMyNotifications(args);
+            case "clear_my_notifications":
+              return await this.handleClearMyNotifications(args);
+            case "transfer_task":
+              return await this.handleTransferTask(args);
+            case "set_current_agent":
+              return await this.handleSetCurrentAgent(args);
+            case "get_current_agent":
+              return await this.handleGetCurrentAgent(args);
+            default:
+              throw new Error(`Unknown tool: ${name}`);
+          }
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error.message}`,
+              },
+            ],
+            isError: true,
+          };
         }
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error.message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    });
+      },
+    );
   }
 
   ensureTaskManager(options = {}) {
@@ -1526,14 +1544,15 @@ Pending recommendations: ${checkIn.status.pending_recommendations}${recommendati
   }
 
   async run() {
-    const transport = new StdioServerTransport();
+    await this.initialize();
+    const transport = new global.StdioServerTransport();
     await this.server.connect(transport);
     console.log("TaskManager MCP server running on stdio");
   }
 }
 
 // Run the server
-if (require.main === module) {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -1544,9 +1563,9 @@ This is an MCP (Model Context Protocol) server that exposes the
 Multiagent Task Manager functionality to AI assistants like Claude.
 
 Usage:
-  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp              # Run MCP server
-  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp --version    # Show version
-  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp --help       # Show this help
+  npx multiagent-task-manager-mcp              # Run MCP server
+  npx multiagent-task-manager-mcp --version    # Show version
+  npx multiagent-task-manager-mcp --help       # Show this help
 
 Configuration:
 Add to your Claude Desktop config:
@@ -1589,7 +1608,11 @@ For full documentation, see: MCP-SETUP.md
   }
 
   const server = new TaskManagerMCPServer();
-  server.run().catch(console.error);
+  await server.run();
+}
+
+if (require.main === module) {
+  main().catch(console.error);
 }
 
 module.exports = TaskManagerMCPServer;
