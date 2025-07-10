@@ -131,3 +131,4 @@ phases/
 .env.development.local
 .env.test.local
 .env.production.local
+npx-test/
