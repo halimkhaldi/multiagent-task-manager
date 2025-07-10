@@ -501,10 +501,16 @@ alias tms="npx multiagent-task-manager status"
 
 Use TaskManager as an AI assistant tool:
 
-**Note**: The MCP server defaults to using the current directory for task data, making it easy to work with project-specific tasks.
+**Note**: The MCP server defaults to using the current directory for task data, making it easy to work with project-specific tasks. It includes automatic safety handling for read-only directories.
+
+### Directory Safety Features
+- **Current Directory Default**: Uses your current working directory for task data
+- **Automatic Fallback**: If current directory is read-only, falls back to \`~/TaskManager\`
+- **System Directory Protection**: Avoids writing to system directories like \`/\`, \`/usr/\`, \`/opt/\`
+- **Error Handling**: Graceful failure with helpful error messages
 
 \`\`\`bash
-# Start MCP server in current directory (default behavior)
+# Start MCP server in current directory (safe default behavior)
 npx -y --package=multiagent-task-manager multiagent-task-manager-mcp
 
 # Alternative: Install globally first
@@ -518,7 +524,7 @@ node mcp-server.js
 npx -y --package=multiagent-task-manager multiagent-task-manager-mcp &
 \`\`\`
 
-### Published Package Configuration
+### Recommended Configuration
 Add to your AI assistant configuration:
 \`\`\`json
 {
@@ -534,8 +540,13 @@ Add to your AI assistant configuration:
 }
 \`\`\`
 
-### Local Development Configuration
-For testing before publishing:
+**How it works:**
+- Automatically uses current directory for task data
+- If directory is read-only, safely falls back to \`~/TaskManager\`
+- No manual directory configuration needed in most cases
+
+### Custom Directory Configuration (Optional)
+If you need to override the automatic directory handling:
 \`\`\`json
 {
   "mcpServers": {
@@ -543,12 +554,18 @@ For testing before publishing:
       "command": "npx",
       "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
+        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"
       }
     }
   }
 }
 \`\`\`
+
+**When to use custom configuration:**
+- Working across multiple projects but want centralized task data
+- Need tasks stored in a specific location for backup/sync
+- Corporate environments with specific directory requirements
 
 ## 📚 Example Workflows
 
@@ -842,7 +859,9 @@ npx multiagent-task-manager clear-notifications   # Clear notifications
 
 **Pro Tip**: Use \`npx multiagent-task-manager\` for the latest version, or install globally with \`npm install -g multiagent-task-manager\` and use \`task-manager\` command directly.
 
-**MCP Usage**: Use \`npx -y --package=multiagent-task-manager multiagent-task-manager-mcp\` to run the MCP server, or install globally with \`npm install -g multiagent-task-manager\` first.
+**MCP Usage**: Use \`npx -y --package=multiagent-task-manager multiagent-task-manager-mcp\` to run the MCP server with automatic directory safety handling, or install globally with \`npm install -g multiagent-task-manager\` first.
+
+**Directory Safety**: The MCP server automatically handles read-only directories and system paths, falling back to safe locations when needed.
 
 Happy task managing! 🚀
 `;

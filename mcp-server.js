@@ -539,47 +539,109 @@ class TaskManagerMCPServer {
 
   ensureTaskManager(options = {}) {
     if (!this.taskManager) {
-      // Default to current directory for MCP server usage
-      const defaultOptions = { useCurrentDir: true, ...options };
-      this.taskManager = new TaskManager(defaultOptions);
+      try {
+        // Default to current directory for MCP server usage, with safety checks
+        const defaultOptions = { useCurrentDir: true, ...options };
+
+        // Safety check for read-only directories
+        const cwd = process.cwd();
+        if (
+          cwd === "/" ||
+          !cwd ||
+          cwd.startsWith("/usr/") ||
+          cwd.startsWith("/opt/")
+        ) {
+          defaultOptions.dataDir = process.env.HOME
+            ? `${process.env.HOME}/TaskManager`
+            : "./tasks-data";
+          defaultOptions.useCurrentDir = false;
+        }
+
+        this.taskManager = new TaskManager(defaultOptions);
+      } catch (error) {
+        // Fallback to a safe directory
+        this.taskManager = new TaskManager({
+          dataDir: process.env.HOME
+            ? `${process.env.HOME}/TaskManager`
+            : "./tasks-data",
+          useCurrentDir: false,
+        });
+      }
     }
   }
 
   async handleInitTaskManager(args) {
     const { dataDir, useCurrentDir, agentId } = args;
 
-    const options = {};
-    if (dataDir) options.dataDir = dataDir;
-    if (agentId) options.agentId = agentId;
-    // Default to current directory for MCP server, unless explicitly overridden
-    options.useCurrentDir = useCurrentDir !== undefined ? useCurrentDir : true;
+    try {
+      const options = {};
+      if (agentId) options.agentId = agentId;
 
-    this.taskManager = new TaskManager(options);
-    const results = this.taskManager.smartInit({
-      useCurrentDir: options.useCurrentDir,
-      dataDir,
-    });
+      // Handle directory configuration safely
+      if (dataDir) {
+        options.dataDir = dataDir;
+        options.useCurrentDir = false;
+      } else {
+        // Default to current directory for MCP server, with fallback
+        options.useCurrentDir =
+          useCurrentDir !== undefined ? useCurrentDir : true;
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: `✅ Task Manager initialized successfully!\n\nInitialization Summary:\n${
-            results.created.length > 0
-              ? `Created: ${results.created.join(", ")}\n`
-              : ""
-          }${
-            results.existed.length > 0
-              ? `Already existed: ${results.existed.join(", ")}\n`
-              : ""
-          }${
-            results.updated.length > 0
-              ? `Updated: ${results.updated.join(", ")}\n`
-              : ""
-          }\nData directory: ${this.taskManager.dataDir}`,
-        },
-      ],
-    };
+        // Ensure we have a writable directory
+        const cwd = process.cwd();
+        if (
+          cwd === "/" ||
+          !cwd ||
+          cwd.startsWith("/usr/") ||
+          cwd.startsWith("/opt/")
+        ) {
+          // Fallback to a user directory if we're in a system directory
+          options.dataDir = process.env.HOME
+            ? `${process.env.HOME}/TaskManager`
+            : "./tasks-data";
+          options.useCurrentDir = false;
+        }
+      }
+
+      this.taskManager = new TaskManager(options);
+
+      const initOptions = { useCurrentDir: options.useCurrentDir };
+      if (options.dataDir && !options.useCurrentDir) {
+        initOptions.dataDir = options.dataDir;
+      }
+
+      const results = this.taskManager.smartInit(initOptions);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Task Manager initialized successfully!\n\nInitialization Summary:\n${
+              results.created.length > 0
+                ? `Created: ${results.created.join(", ")}\n`
+                : ""
+            }${
+              results.existed.length > 0
+                ? `Already existed: ${results.existed.join(", ")}\n`
+                : ""
+            }${
+              results.updated.length > 0
+                ? `Updated: ${results.updated.join(", ")}\n`
+                : ""
+            }\nData directory: ${this.taskManager.dataDir}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `❌ Failed to initialize Task Manager: ${error.message}\n\nTip: Ensure you're running from a writable directory, or provide a custom dataDir.`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   async handleCreateTask(args) {
@@ -1210,8 +1272,13 @@ Add to your Claude Desktop config:
   }
 }
 
+Directory Safety:
+- Defaults to current directory for task data
+- Automatically falls back to ~/TaskManager if current directory is read-only
+- System directories (/, /usr/, /opt/) are avoided for safety
+
 Available Tools:
-- init_task_manager: Initialize task manager
+- init_task_manager: Initialize task manager (safe directory handling)
 - create_task: Create new tasks
 - list_tasks: List and filter tasks
 - add_agent: Add team members
@@ -1220,7 +1287,7 @@ Available Tools:
 - And many more...
 
 For full documentation, see: MCP-SETUP.md
-`);
+    `);
     process.exit(0);
   }
 
