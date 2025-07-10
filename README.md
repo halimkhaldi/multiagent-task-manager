@@ -274,7 +274,7 @@ new TaskManager(options)
 ```
 
 Options:
-- `dataDir`: Directory for storing data files (default: './tasks-data')
+- `dataDir`: Directory for storing data files (default: './tasks-data' with enhanced subdirectory structure)
 - `maxRecommendations`: Maximum recommendations to return (default: 3)
 - `autoSave`: Auto-save changes (default: true)
 
@@ -354,9 +354,10 @@ getAgentWorkload(agentId)
 ### Project Management
 ```bash
 # Initialization (smart, won't override existing files)
-npx task-manager init                        # Initialize in ./tasks-data
+npx task-manager init                        # Initialize with enhanced directory structure
 npx task-manager init --current              # Initialize in current directory
 npx task-manager init --dir PATH             # Initialize in specific directory
+```
 
 # Status and reporting
 npx task-manager status                      # Show project status
@@ -404,10 +405,17 @@ tasks/
 ├── examples.js             # Usage examples
 ├── test-demo.js            # Demo script
 ├── .env.example            # Environment template
+├── src/                    # Enhanced directory utilities
+│   ├── constants/          # Path constants and configuration
+│   └── utils/              # Directory resolution and safety
 └── tasks-data/             # Default data directory (or current dir if --current)
     ├── task-tracker.json   # Task and project data
     ├── agents.json         # Agent registry
-    └── README.md           # Usage guide
+    ├── README.md           # Usage guide
+    ├── agents/             # Agent-specific files and logs
+    ├── reports/            # Generated reports and analytics
+    ├── templates/          # Task and agent templates
+    └── backups/            # Automated backups
 ```
 
 ## 🔄 Workflow Examples
@@ -502,11 +510,59 @@ npx task-manager status
 TASK_MANAGER_DATA_DIR=./demo-data npx task-manager status
 ```
 
+## 📁 Enhanced Directory Structure
+
+TaskManager now uses an intelligent directory structure that provides better organization and supports advanced features:
+
+### Automatic Directory Detection
+
+The system automatically detects your project context:
+- **Project Root Detection**: Searches for markers like `package.json`, `.git`, `pyproject.toml`
+- **Current Directory Integration**: Uses your current working directory when safe
+- **Smart Fallback**: Multiple fallback strategies for maximum reliability
+
+### Directory Layout
+
+```
+your-project/
+└── tasks-data/                 # Main TaskManager directory
+    ├── task-tracker.json       # Core task and project data
+    ├── agents.json             # Agent registry and capabilities
+    ├── README.md               # Auto-generated usage guide
+    ├── agents/                 # Agent-specific files and configurations
+    │   ├── logs/              # Agent activity logs
+    │   └── configs/           # Individual agent settings
+    ├── reports/               # Generated analytics and reports
+    │   ├── workload-report.json
+    │   ├── project-status.json
+    │   └── recommendations.json
+    ├── templates/             # Reusable templates
+    │   ├── example-task.json
+    │   └── agent-template.json
+    └── backups/              # Automated data backups
+        └── backup_YYYY-MM-DD_HH-mm-ss/
+```
+
+### Directory Safety Features
+
+- **System Protection**: Prevents writing to unsafe directories (`/`, `/usr/`, `/opt/`, etc.)
+- **Permission Validation**: Checks write permissions before creating directories
+- **Cross-Platform Support**: Works consistently on Windows, macOS, and Linux
+- **Emergency Fallback**: Always provides a safe working directory
+
+### Legacy Data Migration
+
+The system automatically migrates data from older formats:
+- Detects legacy `task-tracker.json` and `agents.json` in project root
+- Migrates to new structured format seamlessly
+- Preserves all existing task and agent data
+- Maintains backward compatibility
+
 ## Environment Variables
 
 - `TASK_MANAGER_AGENT_ID`: Your agent identifier for personalized commands
-- `TASK_MANAGER_DATA_DIR`: Override default data directory
-- `TASK_MANAGER_USE_CURRENT_DIR`: Set to 'true' to use current directory by default
+- `TASK_MANAGER_DATA_DIR`: Override automatic directory detection
+- `TASK_MANAGER_USE_CURRENT_DIR`: Set to 'true' to force current directory usage
 
 ## 📈 Extending the System
 

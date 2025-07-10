@@ -278,11 +278,20 @@ class TaskManager {
 
 Welcome to your TaskManager project! This directory contains all your project data and serves as the command center for multi-agent collaboration.
 
-## 📁 Files Overview
+## 📁 Directory Structure
 
+### Core Files
 - \`task-tracker.json\`: Main project and task data
 - \`agents.json\`: Agent registry and capabilities
 - \`README.md\`: This comprehensive guide
+
+### Subdirectories
+- \`agents/\`: Agent-specific files, logs, and configurations
+- \`reports/\`: Generated analytics and status reports
+- \`templates/\`: Task and agent templates for quick setup
+- \`backups/\`: Automated backups of project data
+
+This enhanced structure provides better organization and supports advanced features like automated reporting and agent-specific data management.
 
 ## 🚀 Quick Start
 
@@ -293,6 +302,9 @@ export TASK_MANAGER_AGENT_ID=your-agent-id
 # Or create a .env file with:
 # TASK_MANAGER_AGENT_ID=your-agent-id
 # TASK_MANAGER_DATA_DIR=./tasks-data
+
+# Note: This directory uses an enhanced structure with organized subdirectories
+# for better project management and advanced features
 
 # Check your current tasks
 npx multiagent-task-manager my-tasks
@@ -522,15 +534,17 @@ alias tms="npx multiagent-task-manager status"
 
 ## 🤖 AI Assistant Integration (MCP)
 
-Use TaskManager as an AI assistant tool:
+Use TaskManager as an AI assistant tool with enhanced directory management:
 
-**Note**: The MCP server defaults to using the current directory for task data, making it easy to work with project-specific tasks. It includes automatic safety handling for read-only directories.
+**Note**: The MCP server features intelligent directory resolution and creates an organized structure automatically. It includes comprehensive safety handling and project detection.
 
-### Directory Safety Features
-- **Current Directory Default**: Uses your current working directory for task data
-- **Automatic Fallback**: If current directory is read-only, falls back to \`~/TaskManager\`
-- **System Directory Protection**: Avoids writing to system directories like \`/\`, \`/usr/\`, \`/opt/\`
-- **Error Handling**: Graceful failure with helpful error messages
+### Enhanced Directory Features
+- **Project Root Detection**: Automatically finds your project root using markers like package.json, .git
+- **Intelligent Structure**: Creates organized subdirectories (agents/, reports/, templates/, backups/)
+- **Current Directory Smart Default**: Uses current directory with enhanced safety checks
+- **Automatic Fallback**: Multiple fallback strategies for maximum reliability
+- **System Directory Protection**: Comprehensive protection against unsafe directories
+- **Legacy Data Migration**: Automatically migrates existing TaskManager data
 
 \`\`\`bash
 # Start MCP server in current directory (safe default behavior)
@@ -564,8 +578,11 @@ Add to your AI assistant configuration:
 \`\`\`
 
 **How it works:**
-- Automatically uses current directory for task data
-- If directory is read-only, safely falls back to \`~/TaskManager\`
+- Detects project root automatically (looks for package.json, .git, etc.)
+- Creates enhanced directory structure with organized subdirectories
+- Uses current directory with intelligent safety validation
+- Multiple fallback strategies: project-based, user home, emergency locations
+- Migrates existing legacy data automatically
 - No manual directory configuration needed in most cases
 
 ### Custom Directory Configuration (Optional)
@@ -589,6 +606,7 @@ If you need to override the automatic directory handling:
 - Working across multiple projects but want centralized task data
 - Need tasks stored in a specific location for backup/sync
 - Corporate environments with specific directory requirements
+- Override automatic project detection for special workflows
 
 ## 📚 Example Workflows
 
