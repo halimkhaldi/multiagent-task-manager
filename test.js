@@ -144,12 +144,14 @@ async function testTaskManagerInitialization() {
     fs.existsSync(TEST_CONFIG.testDir),
     "Test directory should be created",
   );
+  // Files are now created in tasks-data subdirectory
+  const tasksDataDir = path.join(TEST_CONFIG.testDir, "tasks-data");
   assert(
-    fs.existsSync(path.join(TEST_CONFIG.testDir, "task-tracker.json")),
+    fs.existsSync(path.join(tasksDataDir, "task-tracker.json")),
     "task-tracker.json should exist",
   );
   assert(
-    fs.existsSync(path.join(TEST_CONFIG.testDir, "agents.json")),
+    fs.existsSync(path.join(tasksDataDir, "agents.json")),
     "agents.json should exist",
   );
 

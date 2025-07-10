@@ -16,6 +16,13 @@ const {
   ListToolsRequestSchema,
 } = require("@modelcontextprotocol/sdk/types.js");
 const TaskManager = require("./task-manager.js");
+const {
+  findProjectRoot,
+  resolveTaskManagerDirectory,
+  createTaskManagerStructure,
+  migrateLegacyData,
+  getDirectoryInfo,
+} = require("./src/utils/directory-utils.js");
 
 class TaskManagerMCPServer {
   constructor() {
@@ -33,6 +40,118 @@ class TaskManagerMCPServer {
 
     this.taskManager = null;
     this.setupToolHandlers();
+  }
+
+  // Enhanced directory resolution using new utilities
+  resolveDirectory(options = {}) {
+    console.log(
+      `[MCP Server] Resolving directory with options:`,
+      JSON.stringify(options, null, 2),
+    );
+
+    // Try to find project root first
+    const projectRoot = findProjectRoot();
+    console.log(`[MCP Server] Project root: ${projectRoot || "Not found"}`);
+
+    // Use the new directory resolution utility
+    const resolution = resolveTaskManagerDirectory({
+      dataDir: options.dataDir,
+      useCurrentDir: options.useCurrentDir,
+      projectRoot: projectRoot,
+    });
+
+    console.log(
+      `[MCP Server] Directory resolution result:`,
+      JSON.stringify(resolution, null, 2),
+    );
+
+    return {
+      directory: resolution.directory,
+      projectRoot: projectRoot,
+      resolution: resolution,
+    };
+  }
+
+  // Legacy method for backward compatibility
+  isDirectorySafe(dirPath) {
+    const { isDirectorySafe } = require("./src/utils/directory-utils.js");
+    return isDirectorySafe(dirPath);
+  }
+
+  // Legacy method for backward compatibility
+  findSafeDirectory(preferredDir = null) {
+    const { findSafeDirectory } = require("./src/utils/directory-utils.js");
+    return findSafeDirectory(preferredDir);
+  }
+
+  ensureTaskManager(options = {}) {
+    if (!this.taskManager) {
+      try {
+        console.log(
+          `[MCP Server] Ensuring TaskManager with options:`,
+          JSON.stringify(options, null, 2),
+        );
+
+        // Use enhanced directory resolution
+        const { directory, projectRoot, resolution } =
+          this.resolveDirectory(options);
+
+        // Ensure directory structure exists
+        const structureResult = createTaskManagerStructure(directory);
+        if (!structureResult.success) {
+          console.warn(
+            `[MCP Server] Directory structure creation had issues:`,
+            structureResult.errors,
+          );
+        }
+
+        // Migrate legacy data if project root found
+        if (projectRoot && projectRoot !== directory) {
+          const migrationResult = migrateLegacyData(projectRoot, directory);
+          if (migrationResult.migrated.length > 0) {
+            console.log(
+              `[MCP Server] Migrated legacy data:`,
+              migrationResult.migrated,
+            );
+          }
+        }
+
+        // Create TaskManager with resolved directory
+        const taskManagerOptions = {
+          ...options,
+          dataDir: directory,
+          useCurrentDir: false, // Always use resolved directory
+        };
+
+        console.log(
+          `[MCP Server] Creating TaskManager with options:`,
+          JSON.stringify(taskManagerOptions, null, 2),
+        );
+        this.taskManager = new TaskManager(taskManagerOptions);
+        console.log(
+          `[MCP Server] TaskManager initialized successfully with dataDir: ${this.taskManager.dataDir}`,
+        );
+      } catch (error) {
+        console.error(
+          `[MCP Server] Error in ensureTaskManager: ${error.message}`,
+        );
+        console.error(`[MCP Server] Stack trace: ${error.stack}`);
+
+        // Emergency fallback
+        const emergencyDir = "./emergency-tasks-data";
+        console.log(`[MCP Server] Using emergency fallback: ${emergencyDir}`);
+
+        const emergencyOptions = {
+          dataDir: emergencyDir,
+          useCurrentDir: false,
+        };
+
+        this.taskManager = new TaskManager(emergencyOptions);
+        console.log(
+          `[MCP Server] Emergency TaskManager initialized with dataDir: ${this.taskManager.dataDir}`,
+        );
+      }
+    }
   }
 
   setupToolHandlers() {
@@ -540,32 +659,92 @@ class TaskManagerMCPServer {
   ensureTaskManager(options = {}) {
     if (!this.taskManager) {
       try {
+        // Enhanced logging for debugging directory issues
+        const cwd = process.cwd();
+        const homeDir = process.env.HOME;
+        const taskManagerDataDir = process.env.TASK_MANAGER_DATA_DIR;
+
+        console.log(`[MCP Server] Directory Detection Debug:`);
+        console.log(`  Current Working Directory: ${cwd}`);
+        console.log(`  HOME environment variable: ${homeDir}`);
+        console.log(`  TASK_MANAGER_DATA_DIR: ${taskManagerDataDir}`);
+        console.log(`  Options passed: ${JSON.stringify(options, null, 2)}`);
+
         // Default to current directory for MCP server usage, with safety checks
         const defaultOptions = { useCurrentDir: true, ...options };
 
-        // Safety check for read-only directories
-        const cwd = process.cwd();
-        if (
+        // Enhanced safety check for problematic directories
+        const isSystemDirectory =
           cwd === "/" ||
           !cwd ||
           cwd.startsWith("/usr/") ||
-          cwd.startsWith("/opt/")
-        ) {
-          defaultOptions.dataDir = process.env.HOME
-            ? `${process.env.HOME}/TaskManager`
-            : "./tasks-data";
+          cwd.startsWith("/opt/") ||
+          cwd.startsWith("/var/") ||
+          cwd.startsWith("/tmp/") ||
+          cwd.startsWith("/etc/") ||
+          cwd.startsWith("/bin/") ||
+          cwd.startsWith("/sbin/") ||
+          cwd.includes("node_modules") ||
+          cwd.includes("/.npm/") ||
+          cwd.includes("/.cache/");
+
+        if (isSystemDirectory) {
+          console.log(
+            `[MCP Server] WARNING: Detected unsafe directory: ${cwd}`,
+          );
+          console.log(`[MCP Server] Falling back to safe directory...`);
+
+          // Priority order for fallback directories
+          let fallbackDir;
+          if (taskManagerDataDir) {
+            fallbackDir = taskManagerDataDir;
+            console.log(
+              `[MCP Server] Using TASK_MANAGER_DATA_DIR: ${fallbackDir}`,
+            );
+          } else if (homeDir) {
+            fallbackDir = `${homeDir}/TaskManager`;
+            console.log(`[MCP Server] Using HOME directory: ${fallbackDir}`);
+          } else {
+            fallbackDir = "./tasks-data";
+            console.log(`[MCP Server] Using relative fallback: ${fallbackDir}`);
+          }
+
+          defaultOptions.dataDir = fallbackDir;
           defaultOptions.useCurrentDir = false;
+        } else {
+          console.log(`[MCP Server] Using current directory: ${cwd}`);
         }
 
+        console.log(
+          `[MCP Server] Final options: ${JSON.stringify(defaultOptions, null, 2)}`,
+        );
         this.taskManager = new TaskManager(defaultOptions);
+        console.log(
+          `[MCP Server] TaskManager initialized with dataDir: ${this.taskManager.dataDir}`,
+        );
       } catch (error) {
-        // Fallback to a safe directory
-        this.taskManager = new TaskManager({
-          dataDir: process.env.HOME
-            ? `${process.env.HOME}/TaskManager`
-            : "./tasks-data",
+        console.error(
+          `[MCP Server] Error in ensureTaskManager: ${error.message}`,
+        );
+        console.error(`[MCP Server] Stack trace: ${error.stack}`);
+
+        // Enhanced fallback to a safe directory
+        const fallbackOptions = {
+          dataDir:
+            process.env.TASK_MANAGER_DATA_DIR ||
+            (process.env.HOME
+              ? `${process.env.HOME}/TaskManager`
+              : "./tasks-data"),
           useCurrentDir: false,
-        });
+        };
+
+        console.log(
+          `[MCP Server] Using fallback options: ${JSON.stringify(fallbackOptions, null, 2)}`,
+        );
+        this.taskManager = new TaskManager(fallbackOptions);
+        console.log(
+          `[MCP Server] Fallback TaskManager initialized with dataDir: ${this.taskManager.dataDir}`,
+        );
       }
     }
   }
@@ -574,69 +753,181 @@ class TaskManagerMCPServer {
     const { dataDir, useCurrentDir, agentId } = args;
 
     try {
+      console.log(
+        `[MCP Server] handleInitTaskManager called with args: ${JSON.stringify(args, null, 2)}`,
+      );
+
+      const cwd = process.cwd();
+      const homeDir = process.env.HOME;
+      const taskManagerDataDir = process.env.TASK_MANAGER_DATA_DIR;
+
+      console.log(`[MCP Server] Init Environment Debug:`);
+      console.log(`  Current Working Directory: ${cwd}`);
+      console.log(`  HOME: ${homeDir}`);
+      console.log(`  TASK_MANAGER_DATA_DIR: ${taskManagerDataDir}`);
+
       const options = {};
-      if (agentId) options.agentId = agentId;
+      if (agentId) {
+        options.agentId = agentId;
+        console.log(`[MCP Server] Setting agentId: ${agentId}`);
+      }
 
-      // Handle directory configuration safely
-      if (dataDir) {
-        options.dataDir = dataDir;
-        options.useCurrentDir = false;
+      // Use enhanced directory resolution
+      const { directory, projectRoot, resolution } = this.resolveDirectory({
+        dataDir: dataDir,
+        useCurrentDir: useCurrentDir,
+      });
+
+      console.log(`[MCP Server] Directory resolution completed:`);
+      console.log(`  Resolved directory: ${directory}`);
+      console.log(`  Project root: ${projectRoot || "Not found"}`);
+      console.log(`  Strategy used: ${resolution.strategy}`);
+      console.log(`  Fallback used: ${resolution.fallbackUsed}`);
+      console.log(`  Directory safe: ${resolution.safe}`);
+
+      options.dataDir = directory;
+      options.useCurrentDir = false; // Always use resolved directory
+
+      console.log(
+        `[MCP Server] Final TaskManager options: ${JSON.stringify(options, null, 2)}`,
+      );
+
+      // Ensure directory structure exists before creating TaskManager
+      const structureResult = createTaskManagerStructure(directory);
+      if (!structureResult.success) {
+        console.warn(
+          `[MCP Server] Directory structure creation issues:`,
+          structureResult.errors,
+        );
       } else {
-        // Default to current directory for MCP server, with fallback
-        options.useCurrentDir =
-          useCurrentDir !== undefined ? useCurrentDir : true;
+        console.log(
+          `[MCP Server] Directory structure ensured:`,
+          structureResult.created,
+        );
+      }
 
-        // Ensure we have a writable directory
-        const cwd = process.cwd();
-        if (
-          cwd === "/" ||
-          !cwd ||
-          cwd.startsWith("/usr/") ||
-          cwd.startsWith("/opt/")
-        ) {
-          // Fallback to a user directory if we're in a system directory
-          options.dataDir = process.env.HOME
-            ? `${process.env.HOME}/TaskManager`
-            : "./tasks-data";
-          options.useCurrentDir = false;
+      // Migrate legacy data if needed
+      if (projectRoot && projectRoot !== directory) {
+        const migrationResult = migrateLegacyData(projectRoot, directory);
+        if (migrationResult.migrated.length > 0) {
+          console.log(
+            `[MCP Server] Legacy data migrated:`,
+            migrationResult.migrated,
+          );
         }
       }
 
-      this.taskManager = new TaskManager(options);
+      // Create new TaskManager instance with enhanced error handling
+      try {
+        this.taskManager = new TaskManager(options);
+        console.log(`[MCP Server] TaskManager created successfully`);
+        console.log(`  Final dataDir: ${this.taskManager.dataDir}`);
+        console.log(`  Project root: ${projectRoot || "Not detected"}`);
+        console.log(`  Resolution strategy: ${resolution.strategy}`);
+      } catch (tmError) {
+        console.error(
+          `[MCP Server] TaskManager creation failed: ${tmError.message}`,
+        );
+        console.error(`[MCP Server] Attempting emergency recovery...`);
+
+        // Emergency fallback
+        const emergencyDir = "./emergency-tasks-data";
+        const emergencyOptions = {
+          dataDir: emergencyDir,
+          useCurrentDir: false,
+          agentId: options.agentId,
+        };
+        console.log(
+          `[MCP Server] Emergency options: ${JSON.stringify(emergencyOptions, null, 2)}`,
+        );
+        this.taskManager = new TaskManager(emergencyOptions);
+        console.log(
+          `[MCP Server] Emergency TaskManager created with dataDir: ${this.taskManager.dataDir}`,
+        );
+      }
 
       const initOptions = { useCurrentDir: options.useCurrentDir };
       if (options.dataDir && !options.useCurrentDir) {
         initOptions.dataDir = options.dataDir;
       }
 
+      console.log(
+        `[MCP Server] Calling smartInit with options: ${JSON.stringify(initOptions, null, 2)}`,
+      );
       const results = this.taskManager.smartInit(initOptions);
+      console.log(`[MCP Server] smartInit completed successfully`);
+      console.log(`[MCP Server] Results: ${JSON.stringify(results, null, 2)}`);
+
+      const successMessage = `✅ Task Manager initialized successfully!
+
+🏠 Directory Information:
+- Data directory: ${this.taskManager.dataDir}
+- Current working directory: ${cwd}
+- Project root: ${projectRoot || "Not detected"}
+- Resolution strategy: ${resolution.strategy}
+- Directory safety validated: ✅
+- Fallback used: ${resolution.fallbackUsed ? "Yes" : "No"}
+
+📋 Initialization Summary:
+${results.created.length > 0 ? `✨ Created: ${results.created.join(", ")}\n` : ""}${results.existed.length > 0 ? `📁 Already existed: ${results.existed.join(", ")}\n` : ""}${results.updated.length > 0 ? `🔄 Updated: ${results.updated.join(", ")}\n` : ""}
+👤 Agent ID: ${this.taskManager.currentAgentId || "Not set"}
+
+🎯 Ready to manage tasks with enhanced directory handling!`;
+
+      console.log(`[MCP Server] Returning success response`);
 
       return {
         content: [
           {
             type: "text",
-            text: `✅ Task Manager initialized successfully!\n\nInitialization Summary:\n${
-              results.created.length > 0
-                ? `Created: ${results.created.join(", ")}\n`
-                : ""
-            }${
-              results.existed.length > 0
-                ? `Already existed: ${results.existed.join(", ")}\n`
-                : ""
-            }${
-              results.updated.length > 0
-                ? `Updated: ${results.updated.join(", ")}\n`
-                : ""
-            }\nData directory: ${this.taskManager.dataDir}`,
+            text: successMessage,
           },
         ],
       };
     } catch (error) {
+      console.error(
+        `[MCP Server] handleInitTaskManager fatal error: ${error.message}`,
+      );
+      console.error(`[MCP Server] Error stack: ${error.stack}`);
+
+      const errorMessage = `❌ Failed to initialize Task Manager: ${error.message}
+
+🔍 Debug Information:
+- Current directory: ${process.cwd()}
+- HOME directory: ${process.env.HOME || "Not set"}
+- TASK_MANAGER_DATA_DIR: ${process.env.TASK_MANAGER_DATA_DIR || "Not set"}
+- Project root detection: ${findProjectRoot() || "Failed"}
+- Args provided: ${JSON.stringify(args, null, 2)}
+
+💡 Troubleshooting Steps:
+1. Set TASK_MANAGER_DATA_DIR environment variable to a writable directory
+   Example: export TASK_MANAGER_DATA_DIR="$HOME/TaskManager"
+
+2. Ensure you're running from a user directory (not system directories like /, /usr/, etc.)
+
+3. Provide a custom dataDir in the initialization call:
+   Example: {"dataDir": "$HOME/MyTaskManager"}
+
+4. Check directory permissions for write access
+
+5. Run from a project directory with package.json or .git
+
+🔧 Enhanced Solutions:
+- For macOS: export TASK_MANAGER_DATA_DIR="$HOME/TaskManager"
+- For Linux: export TASK_MANAGER_DATA_DIR="$HOME/taskmanager"
+- For Windows: set TASK_MANAGER_DATA_DIR=%USERPROFILE%\\TaskManager
+- Project-based: Run from directory with package.json or .git for automatic detection
+
+🆕 New Features:
+- Automatic project root detection
+- Smart directory structure migration
+- Enhanced safety validation`;
+
       return {
         content: [
           {
             type: "text",
-            text: `❌ Failed to initialize Task Manager: ${error.message}\n\nTip: Ensure you're running from a writable directory, or provide a custom dataDir.`,
+            text: errorMessage,
           },
         ],
         isError: true,

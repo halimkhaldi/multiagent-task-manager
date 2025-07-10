@@ -21,7 +21,21 @@ class TaskManager {
     };
 
     this.dataDir = options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./";
-    this.dataDir = this.dataDir + "tasks-data";
+
+    // Handle both legacy and new MCP directory structures
+    // Legacy: dataDir = "/some/path" → append "tasks-data"
+    // New MCP: dataDir = "/some/path/tasks-data" → use as-is
+    // Use precise check for tasks-data as the final directory component
+    const normalizedDir = path.normalize(this.dataDir);
+    const dirName = path.basename(normalizedDir);
+    if (dirName !== "tasks-data") {
+      // Special handling for "./" to avoid "./tasks-data" becoming "tasks-data"
+      if (this.dataDir === "./") {
+        this.dataDir = "./tasks-data";
+      } else {
+        this.dataDir = path.join(this.dataDir, "tasks-data");
+      }
+    }
     this.trackerFile = path.join(this.dataDir, "task-tracker.json");
     this.agentsFile = path.join(this.dataDir, "agents.json");
     this.currentAgentId =
@@ -56,8 +70,21 @@ class TaskManager {
 
   smartInit(options = {}) {
     const useCurrentDir = options.useCurrentDir || this.config.useCurrentDir;
-    const targetDir =
+    let targetDir =
       options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./tasks-data";
+
+    // Handle both legacy and new MCP directory structures for smartInit
+    // Use precise check for tasks-data as the final directory component
+    const normalizedTarget = path.normalize(targetDir);
+    const targetDirName = path.basename(normalizedTarget);
+    if (targetDirName !== "tasks-data") {
+      // Special handling for "./" to avoid "./tasks-data" becoming "tasks-data"
+      if (targetDir === "./") {
+        targetDir = "./tasks-data";
+      } else {
+        targetDir = path.join(targetDir, "tasks-data");
+      }
+    }
 
     console.log(`🔍 Initializing TaskManager in: ${targetDir}`);
 
