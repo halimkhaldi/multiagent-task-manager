@@ -1,0 +1,44 @@
+{
+  "project": {
+    "name": "New Project",
+    "code": "NEW-PROJ",
+    "version": "1.0.0",
+    "created": "2025-07-10T19:39:07.064Z",
+    "updated": "2025-07-10T19:39:07.065Z",
+    "status": "active",
+    "description": "Project managed by Task Manager"
+  },
+  "progress": {
+    "total_tasks": 0,
+    "completed": 0,
+    "in_progress": 0,
+    "todo": 0,
+    "completion_percentage": 0
+  },
+  "current_state": {
+    "active_phase": "phase-1",
+    "active_tasks": [],
+    "next_recommended_tasks": [],
+    "blocking_issues": [],
+    "latest_update": "2025-07-10T19:39:07.065Z",
+    "recommendation_algorithm": {
+      "version": "2.0.0",
+      "max_recommendations": 3
+    }
+  },
+  "phases": {},
+  "tasks": {},
+  "agents": {},
+  "recommendation_history": [],
+  "metrics": {
+    "velocity": {
+      "tasks_per_day": 0,
+      "completion_rate": 0
+    },
+    "quality": {
+      "bugs_found": 0,
+      "test_coverage": 0
+    },
+    "performance": {}
+  }
+}
