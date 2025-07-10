@@ -11,12 +11,6 @@ const { v4: uuidv4 } = require("uuid");
 
 class TaskManager {
   constructor(options = {}) {
-    this.dataDir =
-      options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./tasks-data";
-    this.trackerFile = path.join(this.dataDir, "task-tracker.json");
-    this.agentsFile = path.join(this.dataDir, "agents.json");
-    this.currentAgentId =
-      options.agentId || process.env.TASK_MANAGER_AGENT_ID || null;
     this.config = {
       maxRecommendations: options.maxRecommendations || 3,
       autoSave: options.autoSave !== false,
@@ -25,6 +19,15 @@ class TaskManager {
         process.env.TASK_MANAGER_USE_CURRENT_DIR === "true",
       ...options,
     };
+
+    this.dataDir =
+      options.dataDir ||
+      process.env.TASK_MANAGER_DATA_DIR ||
+      (this.config.useCurrentDir ? "./" : "./tasks-data");
+    this.trackerFile = path.join(this.dataDir, "task-tracker.json");
+    this.agentsFile = path.join(this.dataDir, "agents.json");
+    this.currentAgentId =
+      options.agentId || process.env.TASK_MANAGER_AGENT_ID || null;
 
     this.scoring = {
       priority: { critical: 10, high: 7, medium: 5, low: 2 },
@@ -132,9 +135,9 @@ class TaskManager {
   handleEnvFile(envPath, envExamplePath, results) {
     const requiredEnvVars = [
       "# TaskManager Configuration",
-      "TASK_MANAGER_AGENT_ID=your-agent-id",
-      "TASK_MANAGER_DATA_DIR=./tasks-data",
-      "TASK_MANAGER_USE_CURRENT_DIR=false",
+      `TASK_MANAGER_AGENT_ID=${this.currentAgentId || "your-agent-id"}`,
+      `TASK_MANAGER_DATA_DIR=${this.dataDir}`,
+      `TASK_MANAGER_USE_CURRENT_DIR=${this.config.useCurrentDir}`,
     ];
 
     if (fs.existsSync(envPath)) {
@@ -498,8 +501,10 @@ alias tms="npx multiagent-task-manager status"
 
 Use TaskManager as an AI assistant tool:
 
+**Note**: The MCP server defaults to using the current directory for task data, making it easy to work with project-specific tasks.
+
 \`\`\`bash
-# Start MCP server (recommended method)
+# Start MCP server in current directory (default behavior)
 npx -y --package=multiagent-task-manager multiagent-task-manager-mcp
 
 # Alternative: Install globally first
@@ -522,7 +527,6 @@ Add to your AI assistant configuration:
       "command": "npx",
       "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
-        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"
       }
     }
@@ -539,7 +543,6 @@ For testing before publishing:
       "command": "npx",
       "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
-        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"
       }
     }

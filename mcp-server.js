@@ -42,19 +42,20 @@ class TaskManagerMCPServer {
         tools: [
           {
             name: "init_task_manager",
-            description: "Initialize the task manager in a specified directory",
+            description:
+              "Initialize the task manager in a directory (defaults to current directory)",
             inputSchema: {
               type: "object",
               properties: {
                 dataDir: {
                   type: "string",
                   description:
-                    "Directory to store task data (default: ./tasks-data)",
+                    "Directory to store task data (optional, overrides useCurrentDir)",
                 },
                 useCurrentDir: {
                   type: "boolean",
                   description:
-                    "Use current directory instead of tasks-data subdirectory",
+                    "Use current directory for task data (default: true)",
                 },
                 agentId: {
                   type: "string",
@@ -538,7 +539,9 @@ class TaskManagerMCPServer {
 
   ensureTaskManager(options = {}) {
     if (!this.taskManager) {
-      this.taskManager = new TaskManager(options);
+      // Default to current directory for MCP server usage
+      const defaultOptions = { useCurrentDir: true, ...options };
+      this.taskManager = new TaskManager(defaultOptions);
     }
   }
 
@@ -548,10 +551,14 @@ class TaskManagerMCPServer {
     const options = {};
     if (dataDir) options.dataDir = dataDir;
     if (agentId) options.agentId = agentId;
-    if (useCurrentDir) options.useCurrentDir = useCurrentDir;
+    // Default to current directory for MCP server, unless explicitly overridden
+    options.useCurrentDir = useCurrentDir !== undefined ? useCurrentDir : true;
 
     this.taskManager = new TaskManager(options);
-    const results = this.taskManager.smartInit({ useCurrentDir, dataDir });
+    const results = this.taskManager.smartInit({
+      useCurrentDir: options.useCurrentDir,
+      dataDir,
+    });
 
     return {
       content: [
@@ -1197,7 +1204,6 @@ Add to your Claude Desktop config:
       "command": "npx",
       "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
-        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"
       }
     }
