@@ -499,20 +499,49 @@ alias tms="npx multiagent-task-manager status"
 Use TaskManager as an AI assistant tool:
 
 \`\`\`bash
-# Start MCP server
-npx multiagent-task-manager-mcp
+# Start MCP server (recommended method)
+npx -y --package=multiagent-task-manager multiagent-task-manager-mcp
 
-# Or run in background
-npx multiagent-task-manager-mcp --port 3000 &
+# Alternative: Install globally first
+npm install -g multiagent-task-manager
+multiagent-task-manager-mcp
+
+# For local development/testing (before publishing)
+node mcp-server.js
+
+# Run in background
+npx -y --package=multiagent-task-manager multiagent-task-manager-mcp &
 \`\`\`
 
+### Published Package Configuration
 Add to your AI assistant configuration:
 \`\`\`json
 {
   "mcpServers": {
-    "task-manager": {
+    "multiagent-task-manager": {
       "command": "npx",
-      "args": ["multiagent-task-manager-mcp"]
+      "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
+      "env": {
+        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
+        "TASK_MANAGER_AGENT_ID": "claude-assistant"
+      }
+    }
+  }
+}
+\`\`\`
+
+### Local Development Configuration
+For testing before publishing:
+\`\`\`json
+{
+  "mcpServers": {
+    "multiagent-task-manager": {
+      "command": "npx",
+      "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
+      "env": {
+        "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
+        "TASK_MANAGER_AGENT_ID": "claude-assistant"
+      }
     }
   }
 }
@@ -731,6 +760,16 @@ npx multiagent-task-manager check-in
 
 # Re-initialize if needed
 npx multiagent-task-manager init
+
+# Test MCP server with correct npx syntax
+npx -y --package=multiagent-task-manager multiagent-task-manager-mcp --help
+
+# Or install globally first
+npm install -g multiagent-task-manager
+multiagent-task-manager-mcp --help
+
+# For local development
+node mcp-server.js --help
 \`\`\`
 
 ## 🔗 Related Resources
@@ -799,6 +838,8 @@ npx multiagent-task-manager clear-notifications   # Clear notifications
 ---
 
 **Pro Tip**: Use \`npx multiagent-task-manager\` for the latest version, or install globally with \`npm install -g multiagent-task-manager\` and use \`task-manager\` command directly.
+
+**MCP Usage**: Use \`npx -y --package=multiagent-task-manager multiagent-task-manager-mcp\` to run the MCP server, or install globally with \`npm install -g multiagent-task-manager\` first.
 
 Happy task managing! 🚀
 `;

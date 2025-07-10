@@ -1184,9 +1184,9 @@ This is an MCP (Model Context Protocol) server that exposes the
 Multiagent Task Manager functionality to AI assistants like Claude.
 
 Usage:
-  npx multiagent-task-manager-mcp              # Run MCP server
-  npx multiagent-task-manager-mcp --version    # Show version
-  npx multiagent-task-manager-mcp --help       # Show this help
+  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp              # Run MCP server
+  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp --version    # Show version
+  npx -y --package=multiagent-task-manager multiagent-task-manager-mcp --help       # Show this help
 
 Configuration:
 Add to your Claude Desktop config:
@@ -1195,7 +1195,7 @@ Add to your Claude Desktop config:
   "mcpServers": {
     "multiagent-task-manager": {
       "command": "npx",
-      "args": ["multiagent-task-manager-mcp"],
+      "args": ["-y", "--package=multiagent-task-manager", "multiagent-task-manager-mcp"],
       "env": {
         "TASK_MANAGER_DATA_DIR": "~/Documents/TaskManager",
         "TASK_MANAGER_AGENT_ID": "claude-assistant"
