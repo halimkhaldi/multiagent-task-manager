@@ -1,0 +1,21 @@
+{
+  "registry": {},
+  "types": {
+    "human": {
+      "icon": "👤",
+      "capabilities": [
+        "all"
+      ]
+    },
+    "ai": {
+      "icon": "🤖",
+      "capabilities": [
+        "code",
+        "analysis",
+        "documentation"
+      ]
+    }
+  },
+  "created": "2025-07-10T19:00:05.526Z",
+  "updated": "2025-07-10T19:00:05.526Z"
+}
