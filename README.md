@@ -10,6 +10,7 @@ A comprehensive JavaScript package for managing tasks across multiple AI agents 
 - **Workload Balancing**: Track and optimize task distribution across agents
 - **Priority & Risk Scoring**: Advanced scoring algorithms for task prioritization
 - **CLI Interface**: Command-line tools for quick task management
+- **MCP Integration**: Model Context Protocol support for AI assistants like Claude
 - **Progress Tracking**: Real-time project progress and completion metrics
 - **Export/Import**: Data portability and backup capabilities
 

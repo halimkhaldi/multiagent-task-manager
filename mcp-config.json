@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "multiagent-task-manager": {
+      "command": "node",
+      "args": ["./mcp-server.js"],
+      "cwd": "./path/to/multiagent-task-manager",
+      "env": {
+        "TASK_MANAGER_DATA_DIR": "./tasks-data",
+        "TASK_MANAGER_AGENT_ID": "assistant"
+      }
+    }
+  }
+}
