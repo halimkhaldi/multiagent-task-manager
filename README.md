@@ -109,8 +109,9 @@ task-manager agents
 task-manager status
 ```
 
-#### Local development
+#### Local development (when working on the package source)
 ```bash
+# When developing the package itself
 node task-manager.js init
 node task-manager.js agents
 node task-manager.js status
@@ -313,43 +314,44 @@ getAgentWorkload(agentId)
 ### Project Management
 ```bash
 # Initialization (smart, won't override existing files)
-node task-manager.js init                    # Initialize in ./tasks-data
-node task-manager.js init --current          # Initialize in current directory
-node task-manager.js init --dir PATH         # Initialize in specific directory
+npx task-manager init                        # Initialize in ./tasks-data
+npx task-manager init --current              # Initialize in current directory
+npx task-manager init --dir PATH             # Initialize in specific directory
 
 # Status and reporting
-node task-manager.js status                  # Show project status
-node task-manager.js export                  # Export project data
+npx task-manager status                      # Show project status
+npx task-manager export                      # Export project data
 ```
 
 ### Agent Management
 ```bash
-node task-manager.js agents                  # List all agents
-node task-manager.js agents add              # Add new agent (interactive)
-node task-manager.js workload <AGENT_ID>     # Show agent workload
+# Agent management
+npx task-manager agents                      # List all agents
+npx task-manager agents add                  # Add new agent (interactive)
+npx task-manager workload <AGENT_ID>         # Show agent workload
 ```
 
 ### Task Management
 ```bash
 # Create tasks
-node task-manager.js create --interactive           # Interactive task creation
-node task-manager.js create --title "Task" --priority high --assign agent-1
+npx task-manager create --interactive               # Interactive task creation
+npx task-manager create --title "Task" --priority high --assign agent-1
 
 # List tasks
-node task-manager.js list                           # List all tasks
-node task-manager.js list --agent agent-1           # Tasks for specific agent
-node task-manager.js list --status todo             # Filter by status
-node task-manager.js list --priority high           # Filter by priority
+npx task-manager list                               # List all tasks
+npx task-manager list --agent agent-1               # Tasks for specific agent
+npx task-manager list --status todo                 # Filter by status
+npx task-manager list --priority high               # Filter by priority
 
 # Update tasks
-node task-manager.js update TASK-001 --status completed
-node task-manager.js update TASK-001 --priority critical
-node task-manager.js assign TASK-001 agent-2        # Assign agent to task
+npx task-manager update TASK-001 --status completed
+npx task-manager update TASK-001 --priority critical
+npx task-manager assign TASK-001 agent-2            # Assign agent to task
 ```
 
 ### Recommendations
 ```bash
-node task-manager.js recommend --agent agent-1      # Get recommendations
+npx task-manager recommend --agent agent-1          # Get recommendations
 ```
 
 ## 📊 Project Structure
@@ -446,14 +448,18 @@ setInterval(() => {
 Run the included examples to see the system in action:
 
 ```bash
-# Run all examples
+# Run all examples (for package development)
 node examples.js
 
-# Run demo with sample data
+# Run demo with sample data (for package development)
 node test-demo.js
 
-# Test CLI with demo data
+# Test CLI with demo data (for package development)
 TASK_MANAGER_DATA_DIR=./demo-data node task-manager.js status
+
+# For end users, use npx instead:
+npx task-manager status
+TASK_MANAGER_DATA_DIR=./demo-data npx task-manager status
 ```
 
 ## Environment Variables
@@ -512,7 +518,7 @@ MIT License - see LICENSE file for details
 For questions and support:
 - Check the examples in `examples.js`
 - Review the test scenarios in `test-demo.js`
-- Use the CLI help: `node task-manager.js`
+- Use the CLI help: `npx task-manager`
 
 ## 🔮 Future Enhancements
 
