@@ -15,8 +15,21 @@ A comprehensive JavaScript package for managing tasks across multiple AI agents 
 
 ## 📦 Installation
 
+### Global Installation
 ```bash
-npm install
+npm install -g multiagent-task-manager
+```
+
+### Using npx (No Installation Required)
+```bash
+npx multiagent-task-manager init
+npx multiagent-task-manager status
+npx task-manager create --title "My task"
+```
+
+### Local Project Installation
+```bash
+npm install multiagent-task-manager
 ```
 
 ## 🎯 Quick Start
@@ -64,26 +77,42 @@ console.log('Recommended tasks:', recommendations);
 
 ### CLI Usage
 
+#### With npx (recommended - no installation needed)
 ```bash
 # Initialize a new project
-node task-manager.js init
+npx task-manager init
 
-# List all agents
-node task-manager.js agents
+# List all agents  
+npx task-manager agents
 
 # Create a new task
-node task-manager.js create --title "Fix bug" --priority high --assign ai-dev-1
+npx task-manager create --title "Fix bug" --priority high --assign ai-dev-1
 
 # Get recommendations for an agent
-node task-manager.js recommend --agent ai-dev-1
+npx task-manager recommend --agent ai-dev-1
 
 # List tasks with filters
-node task-manager.js list --agent ai-dev-1 --status todo
+npx task-manager list --agent ai-dev-1 --status todo
 
 # Update task status
-node task-manager.js update TASK-001 --status completed
+npx task-manager update TASK-001 --status completed
 
 # Show project status
+npx task-manager status
+```
+
+#### With global installation
+```bash
+# After: npm install -g multiagent-task-manager
+task-manager init
+task-manager agents
+task-manager status
+```
+
+#### Local development
+```bash
+node task-manager.js init
+node task-manager.js agents
 node task-manager.js status
 ```
 
