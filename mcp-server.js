@@ -313,6 +313,154 @@ class TaskManagerMCPServer {
               properties: {},
             },
           },
+          {
+            name: "remove_agent",
+            description: "Remove an agent from the system",
+            inputSchema: {
+              type: "object",
+              properties: {
+                agentId: {
+                  type: "string",
+                  description: "Agent ID to remove",
+                },
+              },
+              required: ["agentId"],
+            },
+          },
+          {
+            name: "delete_task",
+            description: "Delete a task",
+            inputSchema: {
+              type: "object",
+              properties: {
+                taskId: {
+                  type: "string",
+                  description: "Task ID to delete",
+                },
+              },
+              required: ["taskId"],
+            },
+          },
+          {
+            name: "get_task",
+            description: "Get details of a specific task",
+            inputSchema: {
+              type: "object",
+              properties: {
+                taskId: {
+                  type: "string",
+                  description: "Task ID",
+                },
+              },
+              required: ["taskId"],
+            },
+          },
+          {
+            name: "unassign_agent",
+            description: "Remove an agent assignment from a task",
+            inputSchema: {
+              type: "object",
+              properties: {
+                taskId: {
+                  type: "string",
+                  description: "Task ID",
+                },
+                agentId: {
+                  type: "string",
+                  description: "Agent ID to unassign",
+                },
+              },
+              required: ["taskId", "agentId"],
+            },
+          },
+          {
+            name: "get_my_tasks",
+            description: "Get tasks for the current agent",
+            inputSchema: {
+              type: "object",
+              properties: {
+                agentId: {
+                  type: "string",
+                  description: "Agent ID (or use current agent)",
+                },
+                status: {
+                  type: "string",
+                  enum: ["todo", "in-progress", "completed", "blocked"],
+                  description: "Filter by status",
+                },
+              },
+            },
+          },
+          {
+            name: "get_my_notifications",
+            description: "Get notifications for the current agent",
+            inputSchema: {
+              type: "object",
+              properties: {
+                agentId: {
+                  type: "string",
+                  description: "Agent ID (or use current agent)",
+                },
+              },
+            },
+          },
+          {
+            name: "clear_my_notifications",
+            description: "Clear notifications for the current agent",
+            inputSchema: {
+              type: "object",
+              properties: {
+                agentId: {
+                  type: "string",
+                  description: "Agent ID (or use current agent)",
+                },
+              },
+            },
+          },
+          {
+            name: "transfer_task",
+            description: "Transfer a task from one agent to another",
+            inputSchema: {
+              type: "object",
+              properties: {
+                taskId: {
+                  type: "string",
+                  description: "Task ID to transfer",
+                },
+                fromAgentId: {
+                  type: "string",
+                  description: "Current agent ID",
+                },
+                toAgentId: {
+                  type: "string",
+                  description: "Target agent ID",
+                },
+              },
+              required: ["taskId", "fromAgentId", "toAgentId"],
+            },
+          },
+          {
+            name: "set_current_agent",
+            description: "Set the current agent ID for the session",
+            inputSchema: {
+              type: "object",
+              properties: {
+                agentId: {
+                  type: "string",
+                  description: "Agent ID to set as current",
+                },
+              },
+              required: ["agentId"],
+            },
+          },
+          {
+            name: "get_current_agent",
+            description: "Get the current agent information",
+            inputSchema: {
+              type: "object",
+              properties: {},
+            },
+          },
         ],
       };
     });
@@ -351,6 +499,26 @@ class TaskManagerMCPServer {
             return await this.handleCompleteTask(args);
           case "export_project":
             return await this.handleExportProject(args);
+          case "remove_agent":
+            return await this.handleRemoveAgent(args);
+          case "delete_task":
+            return await this.handleDeleteTask(args);
+          case "get_task":
+            return await this.handleGetTask(args);
+          case "unassign_agent":
+            return await this.handleUnassignAgent(args);
+          case "get_my_tasks":
+            return await this.handleGetMyTasks(args);
+          case "get_my_notifications":
+            return await this.handleGetMyNotifications(args);
+          case "clear_my_notifications":
+            return await this.handleClearMyNotifications(args);
+          case "transfer_task":
+            return await this.handleTransferTask(args);
+          case "set_current_agent":
+            return await this.handleSetCurrentAgent(args);
+          case "get_current_agent":
+            return await this.handleGetCurrentAgent(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -774,10 +942,233 @@ Pending recommendations: ${checkIn.status.pending_recommendations}${recommendati
     };
   }
 
+  async handleRemoveAgent(args) {
+    this.ensureTaskManager();
+    const { agentId } = args;
+
+    try {
+      this.taskManager.removeAgent(agentId);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Agent ${agentId} removed successfully`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to remove agent: ${error.message}`);
+    }
+  }
+
+  async handleDeleteTask(args) {
+    this.ensureTaskManager();
+    const { taskId } = args;
+
+    try {
+      this.taskManager.deleteTask(taskId);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Task ${taskId} deleted successfully`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to delete task: ${error.message}`);
+    }
+  }
+
+  async handleGetTask(args) {
+    this.ensureTaskManager();
+    const { taskId } = args;
+
+    try {
+      const task = this.taskManager.getTask(taskId);
+      if (!task) {
+        throw new Error(`Task ${taskId} not found`);
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(task, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get task: ${error.message}`);
+    }
+  }
+
+  async handleUnassignAgent(args) {
+    this.ensureTaskManager();
+    const { taskId, agentId } = args;
+
+    try {
+      this.taskManager.unassignAgentFromTask(taskId, agentId);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Agent ${agentId} unassigned from task ${taskId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to unassign agent: ${error.message}`);
+    }
+  }
+
+  async handleGetMyTasks(args) {
+    this.ensureTaskManager();
+    const { agentId, status } = args;
+
+    try {
+      // Set agent if provided
+      if (agentId) {
+        this.taskManager.setCurrentAgent(agentId);
+      }
+
+      let tasks;
+      if (status === "todo") {
+        tasks = this.taskManager.getMyTodoTasks();
+      } else if (status === "in-progress") {
+        tasks = this.taskManager.getMyActiveTasks();
+      } else {
+        tasks = this.taskManager.getMyTasks();
+        if (status) {
+          tasks = tasks.filter((task) => task.status === status);
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(tasks, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get my tasks: ${error.message}`);
+    }
+  }
+
+  async handleGetMyNotifications(args) {
+    this.ensureTaskManager();
+    const { agentId } = args;
+
+    try {
+      if (agentId) {
+        this.taskManager.setCurrentAgent(agentId);
+      }
+
+      const notifications = this.taskManager.getMyNotifications();
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(notifications, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get notifications: ${error.message}`);
+    }
+  }
+
+  async handleClearMyNotifications(args) {
+    this.ensureTaskManager();
+    const { agentId } = args;
+
+    try {
+      if (agentId) {
+        this.taskManager.setCurrentAgent(agentId);
+      }
+
+      this.taskManager.clearMyNotifications();
+      return {
+        content: [
+          {
+            type: "text",
+            text: "✅ Notifications cleared successfully",
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to clear notifications: ${error.message}`);
+    }
+  }
+
+  async handleTransferTask(args) {
+    this.ensureTaskManager();
+    const { taskId, fromAgentId, toAgentId } = args;
+
+    try {
+      // Unassign from source agent
+      this.taskManager.unassignAgentFromTask(taskId, fromAgentId);
+      // Assign to target agent
+      this.taskManager.assignAgentToTask(taskId, toAgentId);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Task ${taskId} transferred from ${fromAgentId} to ${toAgentId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to transfer task: ${error.message}`);
+    }
+  }
+
+  async handleSetCurrentAgent(args) {
+    this.ensureTaskManager();
+    const { agentId } = args;
+
+    try {
+      this.taskManager.setCurrentAgent(agentId);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Current agent set to ${agentId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to set current agent: ${error.message}`);
+    }
+  }
+
+  async handleGetCurrentAgent(args) {
+    this.ensureTaskManager();
+
+    try {
+      const currentAgent = this.taskManager.getCurrentAgent();
+      return {
+        content: [
+          {
+            type: "text",
+            text: currentAgent
+              ? JSON.stringify(currentAgent, null, 2)
+              : "No current agent set",
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get current agent: ${error.message}`);
+    }
+  }
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error("Multiagent Task Manager MCP Server running on stdio");
+    console.log("TaskManager MCP server running on stdio");
   }
 }
 

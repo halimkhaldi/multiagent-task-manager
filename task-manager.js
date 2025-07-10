@@ -281,26 +281,23 @@ npx multiagent-task-manager my-recommendations
 
 \`\`\`bash
 # Create a human developer
-npx multiagent-task-manager add-agent --id dev-john --name "John Smith" --type human --capabilities "frontend,backend,testing"
+npx multiagent-task-manager agents add
 
-# Create an AI agent for code review
-npx multiagent-task-manager add-agent --id ai-reviewer --name "Code Review AI" --type ai --capabilities "code-review,documentation"
-
-# Create a project manager
-npx multiagent-task-manager add-agent --id pm-sarah --name "Sarah Johnson" --type human --capabilities "project-management,coordination"
+# This will prompt you interactively for:
+# - Agent ID (e.g., dev-john)
+# - Name (e.g., John Smith)
+# - Type (human/ai)
+# - Capabilities (e.g., frontend,backend,testing)
 \`\`\`
 
 ### Viewing Agents
 
 \`\`\`bash
 # List all agents
-npx multiagent-task-manager list-agents
+npx multiagent-task-manager agents
 
-# Get detailed agent information
-npx multiagent-task-manager agent-info dev-john
-
-# Find agents by capability
-npx multiagent-task-manager find-agents frontend
+# Get agent workload information
+npx multiagent-task-manager workload dev-john
 \`\`\`
 
 ## 📋 Task Management
@@ -308,22 +305,11 @@ npx multiagent-task-manager find-agents frontend
 ### Creating Tasks
 
 \`\`\`bash
-# Create a basic task
-npx multiagent-task-manager add-task "Implement user authentication" --priority high --type feature
+# Create a task interactively
+npx multiagent-task-manager create --interactive
 
-# Create a task with detailed information
-npx multiagent-task-manager add-task "Fix login bug" \\
-  --description "Users can't login with special characters in password" \\
-  --priority critical \\
-  --type bug \\
-  --category frontend \\
-  --deadline "2024-02-15"
-
-# Create a task with dependencies
-npx multiagent-task-manager add-task "Deploy to staging" \\
-  --depends-on TASK-001,TASK-002 \\
-  --priority medium \\
-  --type deployment
+# Create a task with command line options
+npx multiagent-task-manager create --title "Fix login bug" --priority critical --assign dev-john
 \`\`\`
 
 ### Assigning Tasks
@@ -332,56 +318,37 @@ npx multiagent-task-manager add-task "Deploy to staging" \\
 # Assign a task to a specific agent
 npx multiagent-task-manager assign TASK-001 dev-john
 
-# Let AI recommend the best agent for a task
-npx multiagent-task-manager auto-assign TASK-001
-
-# Assign multiple tasks
-npx multiagent-task-manager assign TASK-001,TASK-002 dev-john
+# Get AI recommendations for task assignment
+npx multiagent-task-manager recommend --agent dev-john
 \`\`\`
 
 ### Working with Tasks
 
 \`\`\`bash
-# Start working on a task
+# Start working on a task (agent-centric)
 npx multiagent-task-manager start TASK-001
 
-# Add progress updates
-npx multiagent-task-manager update TASK-001 --progress "Completed login form validation"
+# Update task status
+npx multiagent-task-manager update TASK-001 --status in-progress
 
-# Mark task as completed
+# Mark task as completed (agent-centric)
 npx multiagent-task-manager complete TASK-001
 
-# Block a task with reason
-npx multiagent-task-manager block TASK-001 --reason "Waiting for API documentation"
-
-# Unblock a task
-npx multiagent-task-manager unblock TASK-001
+# Update task status to blocked
+npx multiagent-task-manager update TASK-001 --status blocked
 \`\`\`
 
 ### Task Queries
 
 \`\`\`bash
 # View all tasks
-npx multiagent-task-manager list-tasks
+npx multiagent-task-manager list
 
 # Filter tasks by status
-npx multiagent-task-manager list-tasks --status in-progress
-npx multiagent-task-manager list-tasks --status todo,blocked
+npx multiagent-task-manager list --status in-progress
 
-# Filter by priority
-npx multiagent-task-manager list-tasks --priority critical,high
-
-# Filter by assignee
-npx multiagent-task-manager list-tasks --assigned-to dev-john
-
-# Filter by category
-npx multiagent-task-manager list-tasks --category frontend
-
-# Get task details
-npx multiagent-task-manager task-info TASK-001
-
-# Search tasks by text
-npx multiagent-task-manager search "authentication"
+# Filter by agent
+npx multiagent-task-manager list --agent dev-john
 \`\`\`
 
 ## 🎯 Personal Workflow
@@ -405,18 +372,17 @@ npx multiagent-task-manager my-recommendations --include-team-tasks
 ### Time Tracking
 
 \`\`\`bash
-# Start timing work on a task
+# Start working on a task (tracks time automatically)
 npx multiagent-task-manager start TASK-001
 
-# Stop and log time spent
-npx multiagent-task-manager stop TASK-001
+# Complete task (stops time tracking)
+npx multiagent-task-manager complete TASK-001
 
-# Add manual time entry
-npx multiagent-task-manager log-time TASK-001 --hours 2 --description "Code review and testing"
+# Self-assign and start working on an available task
+npx multiagent-task-manager take TASK-001
 
-# View time reports
-npx multiagent-task-manager time-report
-npx multiagent-task-manager time-report --agent dev-john
+# View agent workload (includes time data)
+npx multiagent-task-manager workload dev-john
 \`\`\`
 
 ## 📊 Project Overview
@@ -427,34 +393,18 @@ npx multiagent-task-manager time-report --agent dev-john
 # Get project overview
 npx multiagent-task-manager status
 
-# Generate detailed project report
-npx multiagent-task-manager report
-
-# View dependency graph
-npx multiagent-task-manager dependencies
-
-# Check project health
-npx multiagent-task-manager health-check
-
-# Export data
-npx multiagent-task-manager export --format json
-npx multiagent-task-manager export --format csv
+# Export project data
+npx multiagent-task-manager export
 \`\`\`
 
 ### Analytics
 
 \`\`\`bash
-# Team productivity metrics
-npx multiagent-task-manager metrics
+# Get recommendations for agents
+npx multiagent-task-manager recommend --agent dev-john
 
-# Burndown chart data
-npx multiagent-task-manager burndown
-
-# Velocity tracking
-npx multiagent-task-manager velocity
-
-# Bottleneck analysis
-npx multiagent-task-manager bottlenecks
+# Check agent workloads
+npx multiagent-task-manager workload
 \`\`\`
 
 ## 🔧 Advanced Features
@@ -462,27 +412,24 @@ npx multiagent-task-manager bottlenecks
 ### Bulk Operations
 
 \`\`\`bash
-# Import tasks from CSV
-npx multiagent-task-manager import tasks.csv
+# Export current project data
+npx multiagent-task-manager export
 
-# Bulk status updates
-npx multiagent-task-manager bulk-update --status completed --tasks TASK-001,TASK-002
-
-# Clone task structure for new sprint
-npx multiagent-task-manager clone-sprint --from sprint-1 --to sprint-2
+# Import/restore from exported data
+# (Copy exported JSON to task-tracker.json and agents.json)
 \`\`\`
 
-### Integration & Automation
+### Notifications & Check-in
 
 \`\`\`bash
-# Set up git hooks
-npx multiagent-task-manager setup-git-hooks
+# Agent check-in (shows notifications and status)
+npx multiagent-task-manager check-in
 
-# Configure Slack notifications
-npx multiagent-task-manager setup-slack --webhook-url YOUR_WEBHOOK
+# View notifications
+npx multiagent-task-manager notifications
 
-# Schedule automated reports
-npx multiagent-task-manager schedule-reports --daily --email team@company.com
+# Clear notifications
+npx multiagent-task-manager clear-notifications
 \`\`\`
 
 ## 🏗️ Project Structure
@@ -573,26 +520,186 @@ Add to your AI assistant configuration:
 
 ## 📚 Example Workflows
 
+### 🚀 Complete Workflow Example
+
+Here's a step-by-step example of setting up a project and working with tasks:
+
+\`\`\`bash
+# 1. Initialize the project
+npx multiagent-task-manager init
+export TASK_MANAGER_AGENT_ID=dev-alice
+
+# 2. Add team members
+npx multiagent-task-manager agents add
+# When prompted, enter:
+#   ID: dev-alice
+#   Name: Alice Johnson
+#   Type: human
+#   Capabilities: frontend,react,testing
+
+npx multiagent-task-manager agents add
+# When prompted, enter:
+#   ID: dev-bob
+#   Name: Bob Smith
+#   Type: human
+#   Capabilities: backend,nodejs,database
+
+npx multiagent-task-manager agents add
+# When prompted, enter:
+#   ID: ai-reviewer
+#   Name: Code Review AI
+#   Type: ai
+#   Capabilities: code-review,documentation
+
+# 3. Create some tasks
+npx multiagent-task-manager create --interactive
+# When prompted, enter:
+#   Title: Implement user authentication
+#   Description: Add login/logout functionality with JWT
+#   Category: feature
+#   Priority: high
+#   Assignees: dev-bob
+
+npx multiagent-task-manager create --interactive
+# When prompted, enter:
+#   Title: Design login page UI
+#   Description: Create responsive login form with validation
+#   Category: design
+#   Priority: medium
+#   Assignees: dev-alice
+
+npx multiagent-task-manager create --interactive
+# When prompted, enter:
+#   Title: Write authentication tests
+#   Description: Unit and integration tests for auth system
+#   Category: testing
+#   Priority: medium
+#   Dependencies: TASK-001
+
+# 4. Check project status
+npx multiagent-task-manager status
+npx multiagent-task-manager agents
+
+# 5. Start working on tasks
+export TASK_MANAGER_AGENT_ID=dev-alice
+npx multiagent-task-manager my-tasks
+npx multiagent-task-manager start TASK-002
+
+# 6. Update task progress
+npx multiagent-task-manager update TASK-002 --status in-progress
+
+# 7. Complete the task
+npx multiagent-task-manager complete TASK-002
+
+# 8. Assign reviewer
+npx multiagent-task-manager assign TASK-002 ai-reviewer
+
+# 9. Check recommendations for next work
+npx multiagent-task-manager my-recommendations
+\`\`\`
+
+### 🎯 Agent-Specific Task Management
+
+\`\`\`bash
+# Working as dev-bob
+export TASK_MANAGER_AGENT_ID=dev-bob
+
+# See my assigned tasks
+npx multiagent-task-manager my-tasks
+
+# Start working on authentication task
+npx multiagent-task-manager start TASK-001
+
+# Check my workload
+npx multiagent-task-manager my-workload
+
+# Update task status
+npx multiagent-task-manager update TASK-001 --status in-progress
+
+# Complete the task
+npx multiagent-task-manager complete TASK-001
+
+# Check notifications
+npx multiagent-task-manager notifications
+\`\`\`
+
+### 🔄 Task Assignment and Transfer Example
+
+\`\`\`bash
+# List all tasks to see what needs assignment
+npx multiagent-task-manager list
+
+# Assign unassigned task to specific agent
+npx multiagent-task-manager assign TASK-003 dev-alice
+
+# Get AI recommendations for best assignment
+npx multiagent-task-manager recommend --agent dev-bob
+
+# Self-assign an available task
+export TASK_MANAGER_AGENT_ID=dev-alice
+npx multiagent-task-manager take TASK-004
+
+# Check agent workloads before reassigning
+npx multiagent-task-manager workload dev-alice
+npx multiagent-task-manager workload dev-bob
+
+# Transfer overloaded work
+npx multiagent-task-manager assign TASK-005 dev-bob
+\`\`\`
+
+### 📋 Status Management Examples
+
+\`\`\`bash
+# Update task statuses
+npx multiagent-task-manager update TASK-001 --status completed
+npx multiagent-task-manager update TASK-002 --status in-progress
+npx multiagent-task-manager update TASK-003 --status blocked
+
+# Filter tasks by status
+npx multiagent-task-manager list --status todo
+npx multiagent-task-manager list --status in-progress
+npx multiagent-task-manager list --status completed
+
+# Check blocked tasks across the project
+npx multiagent-task-manager list --status blocked
+\`\`\`
+
+### 🔍 Project Monitoring Example
+
+\`\`\`bash
+# Daily project overview
+npx multiagent-task-manager status
+npx multiagent-task-manager list --status in-progress
+
+# Check team workloads
+npx multiagent-task-manager workload dev-alice
+npx multiagent-task-manager workload dev-bob
+npx multiagent-task-manager workload ai-reviewer
+
+# Export project data for reporting
+npx multiagent-task-manager export > project-status.json
+\`\`\`
+
 ### Daily Standup Preparation
 
 \`\`\`bash
 # Quick daily overview
 npx multiagent-task-manager my-tasks --status completed,in-progress
 npx multiagent-task-manager my-recommendations
-npx multiagent-task-manager list-tasks --status blocked
+npx multiagent-task-manager list --status blocked
 \`\`\`
 
 ### Sprint Planning
 
 \`\`\`bash
 # Review backlog
-npx multiagent-task-manager list-tasks --status todo --priority high,critical
+npx multiagent-task-manager list --status todo
 
 # Check agent availability
-npx multiagent-task-manager list-agents
+npx multiagent-task-manager agents
 
-# Plan assignments
-npx multiagent-task-manager auto-assign-all --dry-run
+# Get recommendations for assignments
+npx multiagent-task-manager recommend
 \`\`\`
 
 ### Code Review Workflow
@@ -613,18 +720,17 @@ npx multiagent-task-manager complete TASK-001
 ## 🆘 Help & Troubleshooting
 
 \`\`\`bash
-# Get help for any command
-npx multiagent-task-manager --help
-npx multiagent-task-manager add-task --help
+# Get help and see all commands
+npx multiagent-task-manager
 
-# Debug mode
-npx multiagent-task-manager --debug my-tasks
+# View current configuration
+cat .env
 
-# Check configuration
-npx multiagent-task-manager config-check
+# Check agent status and notifications
+npx multiagent-task-manager check-in
 
-# Reset to defaults (backup recommended)
-npx multiagent-task-manager reset --confirm
+# Re-initialize if needed
+npx multiagent-task-manager init
 \`\`\`
 
 ## 🔗 Related Resources
@@ -633,6 +739,62 @@ npx multiagent-task-manager reset --confirm
 - **NPM Package**: \`npm install -g multiagent-task-manager\`
 - **Documentation**: Full docs at project homepage
 - **Issues & Support**: GitHub Issues page
+
+---
+
+## 📖 Quick Reference
+
+### Common Command Patterns
+
+\`\`\`bash
+# Setup & Initialization
+npx multiagent-task-manager init                    # Initialize project
+export TASK_MANAGER_AGENT_ID=your-id              # Set your identity
+
+# Agent Management
+npx multiagent-task-manager agents                 # List all agents
+npx multiagent-task-manager agents add             # Add new agent (interactive)
+npx multiagent-task-manager workload agent-id     # Check agent workload
+
+# Task Creation & Management
+npx multiagent-task-manager create --interactive   # Create task (guided)
+npx multiagent-task-manager list                   # List all tasks
+npx multiagent-task-manager list --status todo     # Filter by status
+npx multiagent-task-manager list --agent agent-id  # Filter by agent
+
+# Task Assignment & Updates
+npx multiagent-task-manager assign TASK-ID AGENT-ID    # Assign task
+npx multiagent-task-manager update TASK-ID --status STATUS  # Update status
+npx multiagent-task-manager take TASK-ID               # Self-assign task
+
+# Personal Workflow
+npx multiagent-task-manager my-tasks               # My assigned tasks
+npx multiagent-task-manager start TASK-ID         # Start working on task
+npx multiagent-task-manager complete TASK-ID      # Complete task
+npx multiagent-task-manager my-recommendations    # Get AI suggestions
+
+# Project Overview
+npx multiagent-task-manager status                # Project summary
+npx multiagent-task-manager recommend             # Get recommendations
+npx multiagent-task-manager export                # Export project data
+
+# Notifications & Check-in
+npx multiagent-task-manager check-in              # Agent status & notifications
+npx multiagent-task-manager notifications         # View notifications
+npx multiagent-task-manager clear-notifications   # Clear notifications
+\`\`\`
+
+### Status Values
+- \`todo\` - Ready to start
+- \`in-progress\` - Currently being worked on
+- \`completed\` - Finished successfully
+- \`blocked\` - Cannot proceed
+
+### Priority Values
+- \`critical\` - Drop everything
+- \`high\` - Important and urgent
+- \`medium\` - Normal priority
+- \`low\` - When time permits
 
 ---
 
