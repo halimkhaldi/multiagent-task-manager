@@ -1,6 +1,6 @@
 {
   "name": "multiagent-task-manager",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A comprehensive multi-agent task management system for coordinating tasks between AI agents and human team members with intelligent recommendations and workload balancing",
   "main": "task-manager.js",
   "bin": {
