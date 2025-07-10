@@ -1,12 +1,12 @@
 {
   "name": "multiagent-task-manager",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "A comprehensive multi-agent task management system for coordinating tasks between AI agents and human team members with intelligent recommendations and workload balancing",
   "main": "task-manager.js",
   "bin": {
-    "task-manager": "./task-manager.js",
-    "multiagent-task-manager": "./task-manager.js",
-    "multiagent-task-manager-mcp": "./mcp-server.js"
+    "task-manager": "task-manager.js",
+    "multiagent-task-manager": "task-manager.js",
+    "multiagent-task-manager-mcp": "mcp-server.js"
   },
   "scripts": {
     "start": "node task-manager.js",
@@ -64,7 +64,8 @@
     "QUICK-MCP-SETUP.md",
     ".env.example",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "src/"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
