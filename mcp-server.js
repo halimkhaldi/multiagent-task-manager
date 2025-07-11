@@ -13,7 +13,6 @@ const TaskManager = require("./task-manager.js");
 const {
   findProjectRoot,
   resolveTaskManagerDirectory,
-  createTaskManagerStructure,
   migrateLegacyData,
   getDirectoryInfo,
 } = require("./src/utils/directory-utils.js");
@@ -45,7 +44,7 @@ class TaskManagerMCPServer {
     this.server = new Server(
       {
         name: "multiagent-task-manager",
-        version: "1.2.11",
+        version: "1.2.12",
       },
       {
         capabilities: {
@@ -177,19 +176,19 @@ class TaskManagerMCPServer {
           {
             name: "init_task_manager",
             description:
-              "Initialize the task manager in a directory (defaults to current directory)",
+              "Initialize the task manager (defaults to ~/TaskManager for MCP safety)",
             inputSchema: {
               type: "object",
               properties: {
                 dataDir: {
                   type: "string",
                   description:
-                    "Directory to store task data (optional, overrides useCurrentDir)",
+                    "Directory to store task data (e.g., '/Users/username/MyProject' or '~/Documents/TaskManager')",
                 },
                 useCurrentDir: {
                   type: "boolean",
                   description:
-                    "Use current directory for task data (default: true)",
+                    "Use current directory for task data (not recommended for MCP - use dataDir instead)",
                 },
                 agentId: {
                   type: "string",
@@ -784,16 +783,51 @@ class TaskManagerMCPServer {
       console.log(`  HOME: ${homeDir}`);
       console.log(`  TASK_MANAGER_DATA_DIR: ${taskManagerDataDir}`);
 
+      // MCP servers run from root, so we need intelligent directory resolution
+      let resolvedDataDir = dataDir;
+
+      if (!resolvedDataDir) {
+        // For MCP, default to user's home directory instead of current working directory
+        if (homeDir) {
+          resolvedDataDir = `${homeDir}/TaskManager`;
+          console.log(
+            `[MCP Server] No dataDir specified, using default: ${resolvedDataDir}`,
+          );
+        } else {
+          resolvedDataDir = "./tasks-data";
+          console.log(
+            `[MCP Server] No HOME directory found, using relative path: ${resolvedDataDir}`,
+          );
+        }
+      } else {
+        console.log(`[MCP Server] Using specified dataDir: ${resolvedDataDir}`);
+      }
+
+      // Check if the resolved directory is safe
+      const isResolvedDirSafe = this.isDirectorySafe(resolvedDataDir);
+      if (!isResolvedDirSafe) {
+        console.log(
+          `[MCP Server] Unsafe directory detected: ${resolvedDataDir}`,
+        );
+        console.log(`[MCP Server] Auto-selecting safe fallback directory`);
+
+        const fallbackDir = homeDir ? `${homeDir}/TaskManager` : "./tasks-data";
+        return await this.handleInitTaskManager({
+          ...args,
+          dataDir: fallbackDir,
+        });
+      }
+
       const options = {};
       if (agentId) {
         options.agentId = agentId;
         console.log(`[MCP Server] Setting agentId: ${agentId}`);
       }
 
-      // Use enhanced directory resolution
+      // Use enhanced directory resolution with MCP-safe defaults
       const { directory, projectRoot, resolution } = this.resolveDirectory({
-        dataDir: dataDir,
-        useCurrentDir: useCurrentDir,
+        dataDir: resolvedDataDir,
+        useCurrentDir: false, // Never use current dir in MCP since it's always root
       });
 
       console.log(`[MCP Server] Directory resolution completed:`);
@@ -810,19 +844,10 @@ class TaskManagerMCPServer {
         `[MCP Server] Final TaskManager options: ${JSON.stringify(options, null, 2)}`,
       );
 
-      // Ensure directory structure exists before creating TaskManager
-      const structureResult = createTaskManagerStructure(directory);
-      if (!structureResult.success) {
-        console.warn(
-          `[MCP Server] Directory structure creation issues:`,
-          structureResult.errors,
-        );
-      } else {
-        console.log(
-          `[MCP Server] Directory structure ensured:`,
-          structureResult.created,
-        );
-      }
+      // Basic directory creation will be handled by TaskManager itself
+      console.log(
+        `[MCP Server] Using basic directory structure for: ${directory}`,
+      );
 
       // Migrate legacy data if needed
       if (projectRoot && projectRoot !== directory) {
@@ -849,7 +874,9 @@ class TaskManagerMCPServer {
         console.error(`[MCP Server] Attempting emergency recovery...`);
 
         // Emergency fallback
-        const emergencyDir = "./emergency-tasks-data";
+        const emergencyDir = homeDir
+          ? `${homeDir}/emergency-tasks-data`
+          : "./emergency-tasks-data";
         const emergencyOptions = {
           dataDir: emergencyDir,
           useCurrentDir: false,
@@ -864,10 +891,10 @@ class TaskManagerMCPServer {
         );
       }
 
-      const initOptions = { useCurrentDir: options.useCurrentDir };
-      if (options.dataDir && !options.useCurrentDir) {
-        initOptions.dataDir = options.dataDir;
-      }
+      const initOptions = {
+        useCurrentDir: false, // Never use current dir in MCP
+        dataDir: options.dataDir,
+      };
 
       console.log(
         `[MCP Server] Calling smartInit with options: ${JSON.stringify(initOptions, null, 2)}`,
@@ -1580,6 +1607,40 @@ Add to your Claude Desktop config:
       }
     }
   }
+
+  // Add directory safety check method for MCP server
+  isDirectorySafe(dirPath) {
+    if (!dirPath || typeof dirPath !== "string") {
+      return false;
+    }
+
+    const normalizedPath = path.resolve(dirPath);
+
+    // Unsafe patterns
+    const unsafePatterns = [
+      /^\/$/, // Root directory
+      /^\/usr\//, // System directories
+      /^\/opt\//, // Optional software
+      /^\/var\//, // Variable data
+      /^\/tmp\//, // Temporary files
+      /^\/etc\//, // System configuration
+      /^\/bin\//, // System binaries
+      /^\/sbin\//, // System admin binaries
+      /^\/root\//, // Root user home
+      /^\/boot\//, // Boot files
+      /^\/dev\//, // Device files
+      /^\/proc\//, // Process files
+      /^\/sys\//, // System files
+    ];
+
+    for (const pattern of unsafePatterns) {
+      if (pattern.test(normalizedPath)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
 
 Directory Safety:
@@ -1588,7 +1649,7 @@ Directory Safety:
 - System directories (/, /usr/, /opt/) are avoided for safety
 
 Available Tools:
-- init_task_manager: Initialize task manager (safe directory handling)
+- init_task_manager: Initialize task manager (defaults to ~/TaskManager for MCP)
 - create_task: Create new tasks
 - list_tasks: List and filter tasks
 - add_agent: Add team members
@@ -1597,6 +1658,9 @@ Available Tools:
 - And many more...
 
 For full documentation, see: MCP-SETUP.md
+
+Note: MCP servers run from system directories, so always specify a dataDir
+or use the default ~/TaskManager location for safety.
     `);
     process.exit(0);
   }

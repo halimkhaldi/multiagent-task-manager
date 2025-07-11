@@ -73,6 +73,9 @@ class TaskManager {
     let targetDir =
       options.dataDir || process.env.TASK_MANAGER_DATA_DIR || "./tasks-data";
 
+    // Detect if we're running in MCP mode (when current directory is unsafe)
+    const isMCPMode = !this.isDirectorySafe(process.cwd());
+
     // Handle both legacy and new MCP directory structures for smartInit
     // Use precise check for tasks-data as the final directory component
     const normalizedTarget = path.normalize(targetDir);
@@ -142,12 +145,28 @@ class TaskManager {
       console.log(`📄 Exists: README.md`);
     }
 
-    // Handle .env file (always in project root)
-    const projectRoot = process.cwd();
-    const envPath = path.join(projectRoot, ".env");
-    const envExamplePath = path.join(__dirname, ".env.example");
+    // Handle .env file (skip entirely in MCP mode)
+    if (!isMCPMode) {
+      const projectRoot = process.cwd();
+      const envPath = path.join(projectRoot, ".env");
+      const envExamplePath = path.join(__dirname, ".env.example");
 
-    this.handleEnvFile(envPath, envExamplePath, results);
+      // Check if we're in a safe directory before creating .env
+      const isProjectRootSafe = this.isDirectorySafe(projectRoot);
+      if (isProjectRootSafe) {
+        this.handleEnvFile(envPath, envExamplePath, results);
+      } else {
+        console.log(
+          `⚠️  Skipped .env creation: unsafe directory ${projectRoot}`,
+        );
+        results.existed.push(".env (skipped - unsafe directory)");
+      }
+    } else {
+      console.log(
+        `🔧 MCP Mode: Skipped .env creation (use environment variables in MCP config)`,
+      );
+      results.existed.push(".env (skipped - MCP mode)");
+    }
 
     // Load data after ensuring files exist
     this.loadData();
@@ -285,13 +304,7 @@ Welcome to your TaskManager project! This directory contains all your project da
 - \`agents.json\`: Agent registry and capabilities
 - \`README.md\`: This comprehensive guide
 
-### Subdirectories
-- \`agents/\`: Agent-specific files, logs, and configurations
-- \`reports/\`: Generated analytics and status reports
-- \`templates/\`: Task and agent templates for quick setup
-- \`backups/\`: Automated backups of project data
-
-This enhanced structure provides better organization and supports advanced features like automated reporting and agent-specific data management.
+This simple structure keeps everything organized in one place for easy management.
 
 ## 🚀 Quick Start
 
@@ -302,9 +315,6 @@ export TASK_MANAGER_AGENT_ID=your-agent-id
 # Or create a .env file with:
 # TASK_MANAGER_AGENT_ID=your-agent-id
 # TASK_MANAGER_DATA_DIR=./tasks-data
-
-# Note: This directory uses an enhanced structure with organized subdirectories
-# for better project management and advanced features
 
 # Check your current tasks
 npx multiagent-task-manager my-tasks
@@ -2436,6 +2446,40 @@ Happy task managing! 🚀
         console.error(`❌ Unknown command: ${parsed.command}`);
         console.log("Run without arguments to see available commands");
     }
+  }
+
+  // Add directory safety check method
+  isDirectorySafe(dirPath) {
+    if (!dirPath || typeof dirPath !== "string") {
+      return false;
+    }
+
+    const normalizedPath = path.resolve(dirPath);
+
+    // Unsafe patterns
+    const unsafePatterns = [
+      /^\/$/, // Root directory
+      /^\/usr\//, // System directories
+      /^\/opt\//, // Optional software
+      /^\/var\//, // Variable data
+      /^\/tmp\//, // Temporary files
+      /^\/etc\//, // System configuration
+      /^\/bin\//, // System binaries
+      /^\/sbin\//, // System admin binaries
+      /^\/root\//, // Root user home
+      /^\/boot\//, // Boot files
+      /^\/dev\//, // Device files
+      /^\/proc\//, // Process files
+      /^\/sys\//, // System files
+    ];
+
+    for (const pattern of unsafePatterns) {
+      if (pattern.test(normalizedPath)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
